@@ -1,0 +1,148 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+
+namespace WritePascalParser.Models
+{
+    public class TokenConverter
+    {
+        private string _inputData;
+        public string InputData
+        {
+            get { return _inputData; }
+            set { _inputData = value; }
+        }
+
+        public TokenConverter(string inputData)
+        {
+            InputData = inputData;
+        }
+
+        public List<TokenData> CreateTokens()
+        {
+            List<TokenData> tokens = new();
+
+            Regex regex = new(@"write|((?!(write))[^\s();,])+|\(|\)|;|,|\s");
+            MatchCollection matches = regex.Matches(_inputData);
+            if (matches.Count > 0)
+                foreach (Match match in matches)
+                {
+                    if (string.IsNullOrWhiteSpace(match.Value)) continue;
+
+                    switch (match.Value)
+                    {
+                        case "write":
+                            tokens.Add(new(TokenEnum.Write, match.Value));
+                            break;
+                        case "(":
+                            tokens.Add(new(TokenEnum.OpenBracket, match.Value));
+                            break;
+                        case ")":
+                            tokens.Add(new(TokenEnum.CloseBracket, match.Value));
+                            break;
+                        case ";":
+                            tokens.Add(new(TokenEnum.EndLine, match.Value));
+                            break;
+                        case ",":
+                            tokens.Add(new(TokenEnum.Comma, match.Value));
+                            break;
+                        default:
+                            tokens.Add(new(TokenEnum.Arguments, match.Value));
+                            break;
+                    }
+                }
+            return tokens;
+
+            //Regex regex = new(@"(write)|(\(|\)|;)|([^()\s]+)");
+            //MatchCollection matches = regex.Matches(_inputData);
+            //if (matches.Count > 0)
+            //    foreach (Match match in matches)
+            //    {
+            //        if (string.IsNullOrWhiteSpace(match.Value)) continue;
+
+            //        switch (match.Value)
+            //        {
+            //            case "write":
+            //                tokens.Add(new( TokenEnum.Write, match.Value));
+            //                break;
+            //            case "(":
+            //                tokens.Add(new(TokenEnum.OpenBracket, match.Value)); 
+            //                break;
+            //            case ")":
+            //                tokens.Add(new(TokenEnum.CloseBracket, match.Value));
+            //                break;
+            //            case ";":
+            //                tokens.Add(new(TokenEnum.EndLine, match.Value));
+            //                break;
+            //            default:
+
+            //                string text = match.Value;
+            //                int lastPos = 0;
+
+            //                // Ищем все вхождения 'write' в тексте
+            //                for (int i = 0; i <= text.Length - 5; i++)
+            //                {
+            //                    if (text.Substring(i, 5) == "write")
+            //                    {
+            //                        // Выводим текст до 'write'
+            //                        if (i > lastPos)
+            //                        {
+            //                            string partLine = text.Substring(lastPos, i - lastPos);
+            //                            tokens.Add(new(TokenEnum.Arguments, partLine));
+            //                            /*if (tokens.Count > 0 && tokens.Last().TokenEnum == TokenEnum.OpenBracket)
+            //                                tokens.Add(new(TokenEnum.Arguments, partLine));
+            //                            else
+            //                                tokens.Add(new(TokenEnum.None, partLine)); */
+            //                        }
+
+            //                        // Выводим 'write'
+            //                        tokens.Add(new(TokenEnum.Write, "write"));
+
+            //                        i += 4; // Пропускаем 4 символа (так как уже проверили 5)
+            //                        lastPos = i + 1;
+            //                    }
+            //                }
+
+            //                // Выводим оставшийся текст после последнего 'write'
+            //                if (lastPos < text.Length)
+            //                {
+            //                    string partLine = text.Substring(lastPos);
+            //                    tokens.Add(new(TokenEnum.Arguments, partLine));
+            //                    /*if (tokens.Count > 0 && tokens.Last().TokenEnum == TokenEnum.OpenBracket)
+            //                        tokens.Add(new(TokenEnum.Arguments, partLine));
+            //                    else
+            //                        tokens.Add(new(TokenEnum.None, partLine));*/
+            //                }
+
+
+
+            //                /*
+            //                // Разбиваем текст на части перед/после 'write'
+            //                var parts = Regex.Split(match.Value, @"(?=write)|(?<=write)");
+            //                foreach (var part in parts)
+            //                {
+            //                    if (string.IsNullOrWhiteSpace(part)) continue;
+            //                    if (part == "write")
+            //                        tokens.Add(new(TokenEnum.Write, part));
+            //                    else
+            //                    {
+            //                        if (tokens.Count > 0 && tokens.Last().TokenEnum == TokenEnum.OpenBracket)
+            //                            tokens.Add(new(TokenEnum.Arguments, part));
+            //                        else
+            //                            tokens.Add(new(TokenEnum.None, part));
+            //                    }
+            //                }*/
+
+            //                break;
+            //        }
+
+            //    }
+
+
+
+        }
+    }
+}

@@ -1,0 +1,99 @@
+﻿<Window x:Class="WritePascalParser.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewModel="clr-namespace:WritePascalParser.ViewModels"
+        WindowStartupLocation="CenterScreen"
+        mc:Ignorable="d"
+        Title="Синтаксический анализатор" Height="550" Width="800" 
+        Closing="WindowClosing" FontSize="16">
+
+    <Window.DataContext>
+        <viewModel:MainWindowVM/>
+    </Window.DataContext>
+
+    <Grid Background="#FFE4F7">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="50"/>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <Menu Height="25" VerticalAlignment="Top" Background="#FFE4F7" FontSize="16">
+            <MenuItem Header="Файл" Cursor="Hand">
+                <MenuItem Header="Создать" Cursor="Hand" Command="{Binding CreateCommand}"></MenuItem>
+                <MenuItem Header="Открыть" Cursor="Hand" Command="{Binding OpenCommand}"></MenuItem>
+                <MenuItem Header="Сохранить" Cursor="Hand" Command="{Binding SaveCommand}"></MenuItem>
+                <MenuItem Header="Сохранить как" Cursor="Hand" Command="{Binding SaveAsCommand}"></MenuItem>
+                <MenuItem Header="Выход" Cursor="Hand"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Правка" Cursor="Hand">
+                <MenuItem Header="Отменить" Cursor="Hand" Click="Undo"></MenuItem>
+                <MenuItem Header="Вернуть" Cursor="Hand" Click="Redo"></MenuItem>
+                <MenuItem Header="Копировать" Cursor="Hand" Click="Copy"></MenuItem>
+                <MenuItem Header="Вырезать" Cursor="Hand" Click="Cut"></MenuItem>
+                <MenuItem Header="Вставить" Cursor="Hand" Click="Paste"></MenuItem>
+                <MenuItem Header="Удалить всё" Cursor="Hand" Click="Clear"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="Текст" Cursor="Hand">
+                <MenuItem Header="Регулярные выражения" Cursor="Hand">
+                    <MenuItem Header="Формула" Cursor="Hand" Click="RegularFormule"></MenuItem>
+                    <MenuItem Header="Язык" Cursor="Hand" Click="RegularLanguage"></MenuItem>
+                    <MenuItem Header="Тестовый пример" Cursor="Hand" Click="RegularExample"></MenuItem>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Пуск" Cursor="Hand" Command="{Binding Start}" >
+            </MenuItem>
+            <MenuItem Header="Справка" Cursor="Hand">
+                <MenuItem Header="Вызов справки" Cursor="Hand" Click="Help"></MenuItem>
+                <MenuItem Header="О программе" Cursor="Hand"></MenuItem>
+            </MenuItem>
+        </Menu>
+
+        <StackPanel Background="#FFE4F7" Grid.Row="1" Orientation="Horizontal" Margin="20 0 0 0">
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Command="{Binding CreateCommand}">
+                <Image Source="resources/paper.png" Stretch="Uniform" />
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Command="{Binding OpenCommand}">
+                <Image Source="resources/folder.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Command="{Binding SaveCommand}">
+                <Image Source="resources/save.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="40 5 5 5" Background="White" Cursor="Hand" Click="Undo">
+                <Image Source="resources/arrow.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Click="Redo">
+                <Image Source="resources/right-arrow.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Click="Copy">
+                <Image Source="resources/copy.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Click="Cut">
+                <Image Source="resources/scissors.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Click="Paste">
+                <Image Source="resources/paste.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Click="Clear">
+                <Image Source="resources/broom.png" Stretch="Uniform"/>
+            </Button>
+            <Button Width="60" Margin="5 5 5 5" Background="White" Cursor="Hand" Command="{Binding Start}">
+                <Image Source="resources/arrow-run.png" Stretch="Uniform"/>
+            </Button>
+        </StackPanel>
+
+        <TextBox x:Name="textBox1" FontSize="20" 
+                 Grid.Row="2" Margin="20, 10, 20, 10" AcceptsReturn="True" 
+                 VerticalScrollBarVisibility="Auto" 
+                 HorizontalScrollBarVisibility="Auto" Text="{Binding TextInput,UpdateSourceTrigger=PropertyChanged}"></TextBox>
+        <TextBox x:Name="textBox2" Background="White" FontSize="20" 
+                 Grid.Row="3" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                 Margin="20, 10, 20, 10" Text="{Binding DebugText,UpdateSourceTrigger=PropertyChanged}" 
+                 VerticalScrollBarVisibility="Auto" ></TextBox>
+
+    </Grid>
+
+</Window>

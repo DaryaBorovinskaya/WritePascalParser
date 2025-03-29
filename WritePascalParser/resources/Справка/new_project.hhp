@@ -1,0 +1,19 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=new_project.chm
+Contents file=Table of Contents.hhc
+Default topic=Intro.htm
+Display compile progress=No
+Full text search stop list file=search.stp
+Full-text search=Yes
+Index file=Index.hhk
+Language=0x419 Русский (Россия)
+Title=First Help File
+
+
+[FILES]
+Файл, справка.htm
+Регулярные выражения.htm
+
+[INFOTYPES]
+
