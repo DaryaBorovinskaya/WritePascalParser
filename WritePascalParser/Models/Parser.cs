@@ -90,11 +90,13 @@ namespace WritePascalParser.Models
 
             string checkArguments = CheckArguments();
             string printTokens = PrintTokens();
+            
 
             _recursiveDescent = new(_tokens);
-            _recursiveDescent.Start();
+           _recursiveDescent.Start();
+            string errors = _recursiveDescent.PrintResultRecursiveDescent();
 
-            return printTokens;
+            return errors;
         }
     }
 }
