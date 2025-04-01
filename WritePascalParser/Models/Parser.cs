@@ -10,14 +10,22 @@ namespace WritePascalParser.Models
     public class Parser
     {
         private string _inputData;
+        private string _copyInputData;
         private TokenConverter _tokenConverter;
         private List<TokenData> _tokens;
         private List<string> _errors;
+        private List<string> _inputLines;
         private RecursiveDescent _recursiveDescent;
         public string InputData 
         { 
             get { return _inputData;}
             set { _inputData = value; }
+        }
+
+        public string CopyInputData
+        {
+            get { return _copyInputData; }
+            set { _copyInputData = value; }
         }
 
         /// <summary>
@@ -26,6 +34,7 @@ namespace WritePascalParser.Models
         private void PreparatoryProcessing()
         {
             _inputData = _inputData.ToLower();
+            _inputLines = CopyInputData.Split('\n').ToList();
         }
 
         private string PrintTokens()
@@ -48,21 +57,7 @@ namespace WritePascalParser.Models
             return outputData;
         }
 
-        /// <summary>
-        /// Удаление токенов, у которых TokenEnum равен None
-        /// </summary>
-        private void ClearTokens()
-        {
-            List<TokenData> newTokens = new ();
-
-            for (int i = 0; i < _tokens.Count; i++)
-            {
-                if (_tokens[i].TokenEnum != TokenEnum.None)
-                    newTokens.Add(_tokens[i]);
-            }
-
-            _tokens = newTokens;
-        }
+        
 
         private void CheckArguments()
         {
@@ -89,7 +84,7 @@ namespace WritePascalParser.Models
                         if (forbiddenChars.Contains(item)
                             || (j == 0 && char.IsDigit(item)))
                         {
-                            tempErrors.Add($"ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
+                            tempErrors.Add($"Строка {_tokens[i].LineNumber} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
                             invalidTokenIndexes.Add(i);
                             isInvalidToken = false;
                         }
@@ -114,7 +109,7 @@ namespace WritePascalParser.Models
                     // В исходной подстроке были все символы невалидные
                     if (_tokens[i].TokenEnum == TokenEnum.None)
                     {
-                        errors.Add($"ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
+                        errors.Add($"Строка {_tokens[i].LineNumber} ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
                     }
                     else
                     {
@@ -152,6 +147,7 @@ namespace WritePascalParser.Models
         public Parser(string inputData) 
         {
             InputData = inputData;
+            CopyInputData = inputData;
         }
 
 
@@ -164,7 +160,7 @@ namespace WritePascalParser.Models
 
             string printTokens = PrintTokens();
 
-            ClearTokens();
+            _tokens = _tokenConverter.ClearTokens(_tokens);
             CheckArguments();
             
 

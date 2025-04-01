@@ -26,6 +26,7 @@ namespace WritePascalParser.Models
         public List<TokenData> CreateTokens()
         {
             List<TokenData> tokens = new();
+            int tempLineNumber = 1;
 
             MatchCollection matches = _regex.Matches(_inputData);
             if (matches.Count > 0)
@@ -34,25 +35,30 @@ namespace WritePascalParser.Models
                     switch (match.Value)
                     {
                         case "write":
-                            tokens.Add(new(TokenEnum.Write, match.Value));
+                            tokens.Add(new(TokenEnum.Write, match.Value, tempLineNumber));
                             break;
                         case "(":
-                            tokens.Add(new(TokenEnum.OpenBracket, match.Value));
+                            tokens.Add(new(TokenEnum.OpenBracket, match.Value, tempLineNumber));
                             break;
                         case ")":
-                            tokens.Add(new(TokenEnum.CloseBracket, match.Value));
+                            tokens.Add(new(TokenEnum.CloseBracket, match.Value, tempLineNumber));
                             break;
                         case ";":
-                            tokens.Add(new(TokenEnum.EndLine, match.Value));
+                            tokens.Add(new(TokenEnum.EndLine, match.Value, tempLineNumber));
                             break;
                         case ",":
-                            tokens.Add(new(TokenEnum.Comma, match.Value));
+                            tokens.Add(new(TokenEnum.Comma, match.Value, tempLineNumber));
                             break;
                         case " ":
-                            tokens.Add(new(TokenEnum.None, match.Value));
+                            tokens.Add(new(TokenEnum.None, match.Value, tempLineNumber));
+                            break;
+                        case "\n":
+                            tempLineNumber += 1;
+                            break;
+                        case "\r":
                             break;
                         default:
-                            tokens.Add(new(TokenEnum.Arguments, match.Value));
+                            tokens.Add(new(TokenEnum.Arguments, match.Value, tempLineNumber));
                             break;
                     }
                 }
@@ -184,5 +190,22 @@ namespace WritePascalParser.Models
                 tokenData.TokenEnum = TokenEnum.None;
             }
         }
+
+        /// <summary>
+        /// Удаление токенов, у которых TokenEnum равен None
+        /// </summary>
+        public List<TokenData> ClearTokens(List<TokenData> tokens)
+        {
+            List<TokenData> newTokens = new();
+
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                if (tokens[i].TokenEnum != TokenEnum.None)
+                    newTokens.Add(tokens[i]);
+            }
+
+            return newTokens;
+        }
+
     }
 }

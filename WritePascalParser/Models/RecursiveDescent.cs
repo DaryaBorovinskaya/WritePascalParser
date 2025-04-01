@@ -62,7 +62,7 @@ namespace WritePascalParser.Models
             // Неверный вариант - текущий токен не ключевое слово write
             else
             {
-                _errors.Add($"ОШИБКА: ожидалось ключевое слово write, получено: \"{_tokens[tokenIndex].TokenValue}\"");
+                _errors.Add($"Строка {_tokens[tokenIndex].LineNumber} ОШИБКА: ожидалось ключевое слово write, получено: \"{_tokens[tokenIndex].TokenValue}\"");
                 
                 if (_tokens.Count < 4)
                 {
@@ -101,7 +101,7 @@ namespace WritePascalParser.Models
             // Неверные варианты - текущий токен не символ "("
             else
             {
-                _errors.Add($"ОШИБКА: ожидался символ \"(\", получено: \"{_tokens[tokenIndex].TokenValue}\"");
+                _errors.Add($"Строка {_tokens[tokenIndex].LineNumber} ОШИБКА: ожидался символ \"(\", получено: \"{_tokens[tokenIndex].TokenValue}\"");
                 // 1. Если есть аргументы у функции write
                 if (_tokens[tokenIndex].TokenEnum == TokenEnum.Arguments)
                 {
@@ -173,16 +173,18 @@ namespace WritePascalParser.Models
 
             else
             {
-                if (tokenIndex == _tokens.Count-1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine
-                    ||
-                     (tokenIndex == _tokens.Count - 2 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine))
+                if (tokenIndex == _tokens.Count-1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine)
                 {
-                    _errors.Add($"ОШИБКА: ожидался символ \";\"");
+                    _errors.Add($"Строка {_tokens[tokenIndex].LineNumber} ОШИБКА: ожидался символ \";\"");
+                }
+                else if (tokenIndex == _tokens.Count - 2 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
+                {
+                    _errors.Add($"Строка {_tokens[tokenIndex+1].LineNumber} ОШИБКА: ожидался символ \";\"");
                 }
 
                 else if (tokenIndex < _tokens.Count-1 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
                 {
-                    _errors.Add($"ОШИБКА: ожидался символ \";\", получено: {_tokens[tokenIndex + 1].TokenValue}");
+                    _errors.Add($"Строка {_tokens[tokenIndex+1].LineNumber} ОШИБКА: ожидался символ \";\", получено: {_tokens[tokenIndex + 1].TokenValue}");
                     _tokenCurrentIndex++;
                     CallCondition(TokenCondition.End, tokenIndex+1);
                 }
@@ -244,8 +246,6 @@ namespace WritePascalParser.Models
                     result += _errors[i] + "\n";
                 }
             }
-            
-
             return result;
         }
     }
