@@ -10,6 +10,7 @@ namespace WritePascalParser.Models
     public class TokenConverter
     {
         private string _inputData;
+        private Regex _regex; 
         public string InputData
         {
             get { return _inputData; }
@@ -19,19 +20,17 @@ namespace WritePascalParser.Models
         public TokenConverter(string inputData)
         {
             InputData = inputData;
+            _regex = new(@"write|((?!(write))[^\s();,])+|\(|\)|;|,|\s");
         }
 
         public List<TokenData> CreateTokens()
         {
             List<TokenData> tokens = new();
 
-            Regex regex = new(@"write|((?!(write))[^\s();,])+|\(|\)|;|,|\s");
-            MatchCollection matches = regex.Matches(_inputData);
+            MatchCollection matches = _regex.Matches(_inputData);
             if (matches.Count > 0)
                 foreach (Match match in matches)
                 {
-                    if (string.IsNullOrWhiteSpace(match.Value)) continue;
-
                     switch (match.Value)
                     {
                         case "write":
@@ -54,6 +53,8 @@ namespace WritePascalParser.Models
                             break;
                     }
                 }
+
+            
             return tokens;
 
             //Regex regex = new(@"(write)|(\(|\)|;)|([^()\s]+)");
@@ -143,6 +144,44 @@ namespace WritePascalParser.Models
 
 
 
+        }
+
+        public void ChangeTokenEnum(TokenData tokenData)
+        {
+            MatchCollection matches = _regex.Matches(tokenData.TokenNewValue);
+            if (matches.Count > 0)
+                foreach (Match match in matches)
+                {
+                    if (string.IsNullOrWhiteSpace(match.Value)) continue;
+
+                    switch (match.Value)
+                    {
+                        case "write":
+                            tokenData.TokenEnum = TokenEnum.Write;
+                            break;
+                        case "(":
+                            tokenData.TokenEnum = TokenEnum.OpenBracket;
+                            break;
+                        case ")":
+                            tokenData.TokenEnum = TokenEnum.CloseBracket;
+                            break;
+                        case ";":
+                            tokenData.TokenEnum = TokenEnum.EndLine;
+                            break;
+                        case ",":
+                            tokenData.TokenEnum = TokenEnum.Comma;
+                            break;
+                        default:
+                            tokenData.TokenEnum = TokenEnum.Arguments;
+                            break;
+                    }
+                }
+            
+            // В исходной подстроке были все символы невалидные
+            else if (tokenData.TokenNewValue.Length == 0)
+            {
+                tokenData.TokenEnum = TokenEnum.None;
+            }
         }
     }
 }

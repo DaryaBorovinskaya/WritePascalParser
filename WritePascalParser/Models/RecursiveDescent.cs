@@ -6,6 +6,17 @@ using System.Threading.Tasks;
 
 namespace WritePascalParser.Models
 {
+    public enum TokenCondition
+    {
+        Write,
+        OpenBracket,
+        StartArgument,
+        SymbRem,
+        Argument,
+        End
+    }
+
+
     public class RecursiveDescent
     {
         private List<TokenData> _tokens;
@@ -14,17 +25,57 @@ namespace WritePascalParser.Models
 
         private int _tokenCurrentIndex;
 
+        
+
+
+        private void CallCondition(TokenCondition condition, int tokenIndex)
+        {
+            switch(condition)
+            {
+                case TokenCondition.Write:
+                    ConditionWrite(tokenIndex);
+                    break;
+                case TokenCondition.OpenBracket:
+                    ConditionOpenBracket(tokenIndex);
+                    break;
+                case TokenCondition.StartArgument: 
+                    ConditionStartArgument(tokenIndex);
+                    break;
+                case TokenCondition.SymbRem:
+                    ConditionSymbRem(tokenIndex);
+                    break;
+                case TokenCondition.Argument:
+                    ConditionArgument(tokenIndex);
+                    break;
+                case TokenCondition.End:
+                    ConditionEnd(tokenIndex);
+                    break;
+            }
+        }
         private void ConditionWrite(int tokenIndex)
         {
-            if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.OpenBracket)
+            if (_tokens[tokenIndex].TokenEnum == TokenEnum.Write 
+                && _tokens[tokenIndex + 1].TokenEnum == TokenEnum.OpenBracket)
             {
                 _tokenCurrentIndex++;
                 ConditionOpenBracket(tokenIndex + 1);
+            }
+            else
+            {
+
             }
         }
 
         private void ConditionOpenBracket(int tokenIndex)
         {
+            //if ((tokenIndex == 0)
+            //    ||
+            //    (tokenIndex - 1 >= 0 && _tokens[tokenIndex - 1].TokenEnum == TokenEnum.Write))
+            //{
+            //    _errors.Add("ОШИБКА: ожидалось ключевое слово \"write\"");
+            //}
+
+
             if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments)
             {
                 _tokenCurrentIndex++;
@@ -40,6 +91,7 @@ namespace WritePascalParser.Models
 
         private void ConditionStartArgument(int tokenIndex)
         {
+
             if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
             {
                 _tokenCurrentIndex++;
@@ -80,7 +132,7 @@ namespace WritePascalParser.Models
 
         private void ConditionEnd(int tokenIndex)
         {
-            if (tokenIndex == _tokens.Count - 1 || _tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
+            if (_errors.Count == 0 && (tokenIndex == _tokens.Count - 1 || _tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine))
             {
                 _errors.Add("Ошибок нет");
                 _isFinal = true;
@@ -88,17 +140,18 @@ namespace WritePascalParser.Models
             }
         }
 
-        public RecursiveDescent(List<TokenData> tokens) 
+        public RecursiveDescent(List<TokenData> tokens, List<string> errors) 
         {
             _tokens = tokens;
-            _errors = new List<string>();
+            _errors = errors;
             _isFinal = false;
         }
 
         public List<string> Start()
         {
             _tokenCurrentIndex = 0;
-            for (; _tokenCurrentIndex < _tokens.Count; _tokenCurrentIndex++)
+            ConditionWrite(_tokenCurrentIndex);
+            /*for (; _tokenCurrentIndex < _tokens.Count; _tokenCurrentIndex++)
             {
                 if (!_isFinal)
                 {
@@ -127,7 +180,7 @@ namespace WritePascalParser.Models
 
                 
             }
-
+            */
             return _errors;
         }
 

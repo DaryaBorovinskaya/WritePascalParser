@@ -10,16 +10,18 @@ namespace WritePascalParser.Models
     {
         public TokenEnum TokenEnum { get; set; }
         public string TokenValue { get; set; }
+        public string TokenNewValue { get; set; }
 
         public TokenData(TokenEnum tokenEnum, string tokenValue) 
         { 
             TokenEnum = tokenEnum;
             TokenValue = tokenValue;
+            TokenNewValue = string.Empty;
         }
 
         public string PrintTokenValue()
         {
-            return TokenEnum.ToString() + " " + TokenValue.ToString() + "\n";
+            return TokenEnum.ToString() + " " + TokenValue + TokenNewValue + "\n";
         }
     }
 }
