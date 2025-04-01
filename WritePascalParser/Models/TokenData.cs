@@ -12,13 +12,16 @@ namespace WritePascalParser.Models
         public string TokenValue { get; set; }
         public string TokenNewValue { get; set; }
         public int LineNumber { get; set; }
+        public int LineOffset {  get; set; } // позиция в строке
 
-        public TokenData(TokenEnum tokenEnum, string tokenValue, int lineNumber) 
+        public TokenData(TokenEnum tokenEnum, string tokenValue, int lineNumber, 
+            int lineOffset) 
         { 
             TokenEnum = tokenEnum;
             TokenValue = tokenValue;
             TokenNewValue = string.Empty;
             LineNumber = lineNumber;
+            LineOffset = lineOffset;
         }
 
         public string PrintTokenValue()

@@ -84,7 +84,7 @@ namespace WritePascalParser.Models
                         if (forbiddenChars.Contains(item)
                             || (j == 0 && char.IsDigit(item)))
                         {
-                            tempErrors.Add($"Строка {_tokens[i].LineNumber} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
+                            tempErrors.Add($"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset + j} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
                             invalidTokenIndexes.Add(i);
                             isInvalidToken = false;
                         }
@@ -109,7 +109,7 @@ namespace WritePascalParser.Models
                     // В исходной подстроке были все символы невалидные
                     if (_tokens[i].TokenEnum == TokenEnum.None)
                     {
-                        errors.Add($"Строка {_tokens[i].LineNumber} ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
+                        errors.Add($"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset} ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
                     }
                     else
                     {
