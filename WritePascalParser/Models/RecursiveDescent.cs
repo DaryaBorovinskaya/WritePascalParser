@@ -26,8 +26,6 @@ namespace WritePascalParser.Models
         private int _tokenCurrentIndex;
 
         
-
-
         private void CallCondition(TokenCondition condition, int tokenIndex)
         {
             switch(condition)
@@ -187,10 +185,14 @@ namespace WritePascalParser.Models
         public string PrintResultRecursiveDescent()
         {
             string result = string.Empty;
-            for (int i = 0; i < _errors.Count; i++)
+            if (_errors != null)
             {
-                result += _errors[i] + "\n";
+                for (int i = 0; i < _errors.Count; i++)
+                {
+                    result += _errors[i] + "\n";
+                }
             }
+            
 
             return result;
         }

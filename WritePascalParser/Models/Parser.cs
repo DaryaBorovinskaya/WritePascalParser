@@ -26,15 +26,6 @@ namespace WritePascalParser.Models
         private void PreparatoryProcessing()
         {
             _inputData = _inputData.ToLower();
-
-            /*string newInputData = string.Empty;
-
-            for(int i=0; i < _inputData.Length;i++)
-            {
-                if (!char.IsWhiteSpace(_inputData[i]))
-                    newInputData += _inputData[i];
-            }
-            _inputData = newInputData;*/
         }
 
         private string PrintTokens()
@@ -47,19 +38,47 @@ namespace WritePascalParser.Models
             return outputData;
         }
 
+        private string PrintErrors()
+        {
+            string outputData = string.Empty;
+            _errors.ForEach(error =>
+            {
+                outputData += error;
+            });
+            return outputData;
+        }
+
+        /// <summary>
+        /// Удаление токенов, у которых TokenEnum равен None
+        /// </summary>
+        private void ClearTokens()
+        {
+            List<TokenData> newTokens = new ();
+
+            for (int i = 0; i < _tokens.Count; i++)
+            {
+                if (_tokens[i].TokenEnum != TokenEnum.None)
+                    newTokens.Add(_tokens[i]);
+            }
+
+            _tokens = newTokens;
+        }
+
         private void CheckArguments()
         {
-            string forbiddenChars = " +-!№#$%^&?*()<>[]:;@\\,\"\t\n\r";
+            string forbiddenChars = "+-!№#$%^&?*()<>[]:;@\\,\"\t\n\r";
             string tempTokenValue = string.Empty;
 
             List<string> errors = new();
-
-            
+            List<string> tempErrors = new();
             List<int> invalidTokenIndexes = new();
-
+            bool isInvalidToken = true;
             
             for (int i = 0; i< _tokens.Count; i++)
             {
+                isInvalidToken = true;
+                tempErrors.Clear();
+
                 // Перебираем все токены, которые могут быть невалидными
                 if (_tokens[i].TokenEnum == TokenEnum.Arguments)
                 {
@@ -70,8 +89,9 @@ namespace WritePascalParser.Models
                         if (forbiddenChars.Contains(item)
                             || (j == 0 && char.IsDigit(item)))
                         {
-                            errors.Add($"ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
+                            tempErrors.Add($"ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
                             invalidTokenIndexes.Add(i);
+                            isInvalidToken = false;
                         }
                         else
                         {
@@ -82,7 +102,23 @@ namespace WritePascalParser.Models
                     // Если аргумент изначально верно написан
                     if (_tokens[i].TokenValue == _tokens[i].TokenNewValue)
                     {
-                        _tokens[i].TokenNewValue = string.Empty; 
+                        _tokens[i].TokenNewValue = string.Empty;
+                    }
+
+                    // Если аргумент был написан неверно
+                    if (!isInvalidToken)
+                    {
+                        _tokenConverter.ChangeTokenEnum(_tokens[i]);
+                    }
+
+                    // В исходной подстроке были все символы невалидные
+                    if (_tokens[i].TokenEnum == TokenEnum.None)
+                    {
+                        errors.Add($"ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
+                    }
+                    else
+                    {
+                        errors.AddRange(tempErrors);
                     }
                 }
             }
@@ -91,25 +127,25 @@ namespace WritePascalParser.Models
 
             List<TokenData> validTokens = new List<TokenData>();
 
-            for (int i = 0; i < _tokens.Count; i++)
+            // Если в исходной строке есть ошибки
+            if (invalidTokenIndexes.Count != 0)
             {
-                for (int j = 0; j < invalidTokenIndexes.Count; j++)
+                for (int i = 0; i < _tokens.Count; i++)
                 {
-                    if (i == invalidTokenIndexes[j])
+                    for (int j = 0; j < invalidTokenIndexes.Count; j++)
                     {
-                        _tokenConverter.ChangeTokenEnum(_tokens[i]);
-                        if (_tokens[i].TokenEnum != TokenEnum.None) 
+                        if (_tokens[i].TokenEnum != TokenEnum.None)
                             validTokens.Add(_tokens[i]);
-                        break;
-                    }
-                    
-                    validTokens.Add(_tokens[i]);
-                    
-                }
-            }
 
-            _tokens = new HashSet<TokenData>( validTokens).ToList();
+                        if (i == invalidTokenIndexes[j])
+                            break;
+                    }
+                }
+                _tokens = new HashSet<TokenData>(validTokens).ToList();
+                
+            }
             _errors = errors;
+
 
         }
 
@@ -128,12 +164,22 @@ namespace WritePascalParser.Models
 
             string printTokens = PrintTokens();
 
+            ClearTokens();
             CheckArguments();
             
 
             _recursiveDescent = new(_tokens, _errors);
-           _recursiveDescent.Start();
-            string errors = _recursiveDescent.PrintResultRecursiveDescent();
+            string errors = string.Empty;
+            if (_tokens.Count != 0)
+            {
+                _recursiveDescent.Start();
+                errors = _recursiveDescent.PrintResultRecursiveDescent();
+            }
+            else
+            {
+                errors = PrintErrors();
+            }
+            
 
             return errors;
         }

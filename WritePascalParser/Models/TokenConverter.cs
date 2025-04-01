@@ -48,6 +48,9 @@ namespace WritePascalParser.Models
                         case ",":
                             tokens.Add(new(TokenEnum.Comma, match.Value));
                             break;
+                        case " ":
+                            tokens.Add(new(TokenEnum.None, match.Value));
+                            break;
                         default:
                             tokens.Add(new(TokenEnum.Arguments, match.Value));
                             break;
@@ -152,8 +155,6 @@ namespace WritePascalParser.Models
             if (matches.Count > 0)
                 foreach (Match match in matches)
                 {
-                    if (string.IsNullOrWhiteSpace(match.Value)) continue;
-
                     switch (match.Value)
                     {
                         case "write":
