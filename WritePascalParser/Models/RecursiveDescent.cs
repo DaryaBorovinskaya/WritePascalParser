@@ -306,6 +306,16 @@ namespace WritePascalParser.Models
                 // PUSH - вызов следующего метода для текущего индекса
                 CallCondition(TokenCondition.Argument, tokenIndex);
             }
+            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
+            {
+                tokenIndex++;
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+                    $"ОШИБКА: ожидался  символ \")\", получено \"{_tokens[tokenIndex].TokenValue}\"",
+                    TokenEnum.CloseBracket,
+                    _tokens[tokenIndex]
+                ));
+            }
         }
 
         private void ConditionArgument(int tokenIndex)
