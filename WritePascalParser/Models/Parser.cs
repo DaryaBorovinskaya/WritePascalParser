@@ -58,10 +58,12 @@ namespace WritePascalParser.Models
         }
 
         
-
+        /// <summary>
+        /// Лексер
+        /// </summary>
         private void CheckArguments()
         {
-            string forbiddenChars = "+-!№#$%^&?*()<>[]:;@\\,\"\t\n\r";
+            string forbiddenChars = "+-!№#$%^&?*<>[]:;@\\,\"\t";
             string tempTokenValue = string.Empty;
 
             List<ErrorLexer> errors = new();
@@ -159,12 +161,12 @@ namespace WritePascalParser.Models
 
         public string StartParse()
         {
-            PreparatoryProcessing();
+            //PreparatoryProcessing();
 
             _tokenConverter = new TokenConverter(InputData);
             _tokens = _tokenConverter.CreateTokens();
 
-            string printTokens = PrintTokens();
+            //string printTokens = PrintTokens();
 
             _tokens = _tokenConverter.ClearTokens(_tokens);
             CheckArguments();
@@ -172,19 +174,24 @@ namespace WritePascalParser.Models
 
             _recursiveDescent = new(_tokens, _errors);
             string errors = string.Empty;
-            
 
-            if (_tokens.Count != 0)
+            if (_tokens.Count > 0)
             {
                 _recursiveDescent.Start();
-                errors += _recursiveDescent.PrintResultRecursiveDescent();
-            }
-            else
-            {
-                errors = PrintErrors();
             }
             
-            
+            errors += _recursiveDescent.PrintResultRecursiveDescent();
+            //if (_tokens.Count != 0)
+            //{
+            //    _recursiveDescent.Start();
+            //    errors += _recursiveDescent.PrintResultRecursiveDescent();
+            //}
+            //else
+            //{
+            //    errors = PrintErrors();
+            //}
+
+
 
             return errors;
         }

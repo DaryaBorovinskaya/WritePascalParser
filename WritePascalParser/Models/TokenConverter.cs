@@ -20,7 +20,7 @@ namespace WritePascalParser.Models
         public TokenConverter(string inputData)
         {
             InputData = inputData;
-            _regex = new(@"write|((?!(write))[^\s();,])+|\(|\)|;|,|\s");
+            _regex = new(@"write|((?!(write))[^\s();,])+|\(|\)|;|,|\s", RegexOptions.IgnoreCase);
         }
 
         public List<TokenData> CreateTokens()
@@ -29,48 +29,57 @@ namespace WritePascalParser.Models
             int tempLineNumber = 1;
             int tempLineOffset = 1;
 
-            MatchCollection matches = _regex.Matches(_inputData);
-            if (matches.Count > 0)
-                foreach (Match match in matches)
-                {
-                    switch (match.Value)
+            if (InputData == null || InputData.Length == 0)
+            {
+                tokens.Add(new(TokenEnum.None, InputData, 0, 0));
+            }
+            else
+            {
+                MatchCollection matches = _regex.Matches(_inputData);
+                if (matches.Count > 0)
+                    foreach (Match match in matches)
                     {
-                        case "write":
-                            tokens.Add(new(TokenEnum.Write, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case "(":
-                            tokens.Add(new(TokenEnum.OpenBracket, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case ")":
-                            tokens.Add(new(TokenEnum.CloseBracket, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case ";":
-                            tokens.Add(new(TokenEnum.EndLine, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case ",":
-                            tokens.Add(new(TokenEnum.Comma, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case " ":
-                            tokens.Add(new(TokenEnum.None, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
-                        case "\n":
-                            tempLineNumber += 1;
-                            tempLineOffset = 1;
-                            break;
-                        case "\r":
-                            break;
-                        default:
-                            tokens.Add(new(TokenEnum.Arguments, match.Value, tempLineNumber, tempLineOffset));
-                            tempLineOffset += match.Value.Length;
-                            break;
+                        switch (match.Value.ToLower())
+                        {
+                            case "write":
+                                tokens.Add(new(TokenEnum.Write, match.Value.ToLower(), tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case "(":
+                                tokens.Add(new(TokenEnum.OpenBracket, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case ")":
+                                tokens.Add(new(TokenEnum.CloseBracket, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case ";":
+                                tokens.Add(new(TokenEnum.EndLine, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case ",":
+                                tokens.Add(new(TokenEnum.Comma, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case " ":
+                                tokens.Add(new(TokenEnum.None, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                            case "\n":
+                                tempLineNumber += 1;
+                                tempLineOffset = 1;
+                                break;
+                            case "\r":
+                                break;
+                            default:
+                                tokens.Add(new(TokenEnum.Arguments, match.Value, tempLineNumber, tempLineOffset));
+                                tempLineOffset += match.Value.Length;
+                                break;
+                        }
                     }
-                }
+            }
+
+            
 
             
             return tokens;
