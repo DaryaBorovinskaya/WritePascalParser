@@ -13,7 +13,7 @@ namespace WritePascalParser.Models
         private string _copyInputData;
         private TokenConverter _tokenConverter;
         private List<TokenData> _tokens;
-        private List<string> _errors;
+        private List<ErrorLexer> _errors;
         private List<string> _inputLines;
         private RecursiveDescent _recursiveDescent;
         public string InputData 
@@ -52,7 +52,7 @@ namespace WritePascalParser.Models
             string outputData = string.Empty;
             _errors.ForEach(error =>
             {
-                outputData += error;
+                outputData += error.ErrorValue;
             });
             return outputData;
         }
@@ -64,8 +64,8 @@ namespace WritePascalParser.Models
             string forbiddenChars = "+-!№#$%^&?*()<>[]:;@\\,\"\t\n\r";
             string tempTokenValue = string.Empty;
 
-            List<string> errors = new();
-            List<string> tempErrors = new();
+            List<ErrorLexer> errors = new();
+            List<ErrorLexer> tempErrors = new();
             List<int> invalidTokenIndexes = new();
             bool isInvalidToken = true;
             
@@ -84,7 +84,10 @@ namespace WritePascalParser.Models
                         if (forbiddenChars.Contains(item)
                             || (j == 0 && char.IsDigit(item)))
                         {
-                            tempErrors.Add($"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset + j} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n");
+                            tempErrors.Add(new(
+                                $"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset + j} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n", 
+                                _tokens[i]
+                            ));
                             invalidTokenIndexes.Add(i);
                             isInvalidToken = false;
                         }
@@ -109,7 +112,10 @@ namespace WritePascalParser.Models
                     // В исходной подстроке были все символы невалидные
                     if (_tokens[i].TokenEnum == TokenEnum.None)
                     {
-                        errors.Add($"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset} ОШИБКА: некорректное слово {tempTokenValue}" + "\n");
+                        errors.Add(new(
+                            $"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset} ОШИБКА: некорректное слово {tempTokenValue}" + "\n",
+                            _tokens[i]
+                        ));
                     }
                     else
                     {
@@ -166,15 +172,18 @@ namespace WritePascalParser.Models
 
             _recursiveDescent = new(_tokens, _errors);
             string errors = string.Empty;
+            
+
             if (_tokens.Count != 0)
             {
                 _recursiveDescent.Start();
-                errors = _recursiveDescent.PrintResultRecursiveDescent();
+                errors += _recursiveDescent.PrintResultRecursiveDescent();
             }
             else
             {
                 errors = PrintErrors();
             }
+            
             
 
             return errors;
