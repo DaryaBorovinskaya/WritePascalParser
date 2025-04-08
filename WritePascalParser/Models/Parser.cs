@@ -58,7 +58,7 @@ namespace WritePascalParser.Models
         /// </summary>
         private void CheckArguments()
         {
-            string forbiddenChars = "+-!№#$%^&?*<>[]:;@\\,\"\t";
+            string forbiddenChars = "_/+-!№#$%^'&?*<>[]:;@\\,\"\t";
             string tempTokenValue = string.Empty;
 
             List<ErrorLexer> errors = new();
@@ -81,8 +81,10 @@ namespace WritePascalParser.Models
                         if (forbiddenChars.Contains(item)
                             || (j == 0 && char.IsDigit(item)))
                         {
+                            _tokens[i].ErrorSymbolLineOffset = _tokens[i].LineOffset + j;
                             tempErrors.Add(new(
-                                $"Строка {_tokens[i].LineNumber} знак {_tokens[i].LineOffset + j} ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n", 
+                                $"Строка {_tokens[i].LineNumber} знак {_tokens[i].ErrorSymbolLineOffset} " +
+                                $"ОШИБКА: некорректный символ {item} в слове {tempTokenValue}" + "\n", 
                                 _tokens[i]
                             ));
                             invalidTokenIndexes.Add(i);

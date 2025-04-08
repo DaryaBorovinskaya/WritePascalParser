@@ -13,6 +13,7 @@ namespace WritePascalParser.Models
         StartArgument,
         SymbRem,
         Argument,
+        CloseBracket,
         End
     }
 
@@ -27,7 +28,62 @@ namespace WritePascalParser.Models
 
         private int _tokenCurrentIndex;
 
-        
+        /// <summary>
+        /// Вызывается, когда символы закончились слишком рано
+        /// </summary>
+        private void EarlyEndingOfRecursiveDescent(int tokenIndex)
+        {
+            int startIndex = 0;
+            switch (_tokens[tokenIndex].TokenEnum)
+            {
+                case TokenEnum.Write:
+                    break;
+                case TokenEnum.OpenBracket:
+                    startIndex = 1;
+                    break;
+                case TokenEnum.CloseBracket:
+                    startIndex = 2; 
+                    break;
+                case TokenEnum.EndLine:
+                    startIndex = 3;
+                    break;
+            }
+
+            List<ErrorNeutralization> ErrorEarlyEnding = new List<ErrorNeutralization>
+            {
+                new(
+                $"Строка {1} знак {1} " +
+                $"ОШИБКА: ожидалось ключевое слово write",
+                TokenEnum.Write,
+                null),
+
+                new(
+                $"Строка {1} знак {1} " +
+                $"ОШИБКА: ожидался символ \"(\"",
+                TokenEnum.OpenBracket,
+                null),
+
+                new(
+                $"Строка {1} знак {1} " +
+                $"ОШИБКА: ожидался символ \")\"",
+                TokenEnum.OpenBracket,
+                null),
+
+                new(
+                $"Строка {1} знак {1} " +
+                $"ОШИБКА: ожидался символ \";\"",
+                TokenEnum.OpenBracket,
+                null),
+
+            };
+
+            _errors.AddRange(ErrorEarlyEnding.GetRange(
+                startIndex + 1,
+                ErrorEarlyEnding.Count - startIndex - 1
+                ));
+            _isEmptyTokens = true;
+        }
+
         private void CallCondition(TokenCondition condition, int tokenIndex)
         {
             switch(condition)
@@ -47,9 +103,13 @@ namespace WritePascalParser.Models
                 case TokenCondition.Argument:
                     ConditionArgument(tokenIndex);
                     break;
+                case TokenCondition.CloseBracket:
+                    ConditionCloseBracket(tokenIndex);
+                    break;
                 case TokenCondition.End:
                     ConditionEnd(tokenIndex);
                     break;
+
             }
         }
         private void ConditionWrite(int tokenIndex)
@@ -125,45 +185,60 @@ namespace WritePascalParser.Models
 
         private void ConditionOpenBracket(int tokenIndex)
         {
-            // Возможно верные варианты
-            if (_tokens[tokenIndex].TokenEnum == TokenEnum.OpenBracket)
+            // Если символы закончились
+            if (tokenIndex == _tokens.Count)
             {
-                if (tokenIndex < _tokens.Count - 1)
+                EarlyEndingOfRecursiveDescent(tokenIndex-1);
+            }
+
+
+            // Возможно верные варианты
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.OpenBracket)
+            {
+                if (tokenIndex <= _tokens.Count - 1)
                 {
                     // Верные варианты
+                    //По грамматике, следует сразу переходить в ConditionStartArgument
+                    _tokenCurrentIndex++;
+                    ConditionStartArgument(tokenIndex+1);
 
-                    // 1. Если есть аргументы у функции write
-                    if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments 
-                        || _tokens[tokenIndex + 1].TokenEnum == TokenEnum.Comma)
-                    {
-                        _tokenCurrentIndex++;
-                        ConditionStartArgument(tokenIndex + 1);
-                    }
 
-                    // 2. Если нет аргументов у функции write
-                    else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
-                    {
-                        _tokenCurrentIndex++;
-                        ConditionEnd(tokenIndex + 1);
-                    }
+                    
+                    //// 1. Если нет аргументов у функции write
+                    //if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
+                    //{
+                    //    _tokenCurrentIndex++;
+                    //    tokenIndex++;
+                    //    ConditionEnd(tokenIndex + 1);
+                    //}
 
-                    // Пока здесь, но как будто надо бы перенести куда-нибудь
+                    //// 2.Если есть аргументы у функции write
 
-                    // Неверный вариант - следующий токен это символ ";"
-                    else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
-                    {
-                        _errors.Add(new(
-                        $"Строка {_tokens[tokenIndex+1].LineNumber} знак {_tokens[tokenIndex+1].LineOffset} " +
-                        $"ОШИБКА: ожидался символ \")\", получено: \"{_tokens[tokenIndex+1].TokenValue}\"",
-                        TokenEnum.OpenBracket,
-                        _tokens[tokenIndex+1]
-                        ));
-                        // PUSH - вызов следующего метода для текущего индекса
-                        CallCondition(TokenCondition.End, tokenIndex);
-                    }
+                    ///*else if(_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments 
+                    //    || _tokens[tokenIndex + 1].TokenEnum == TokenEnum.Comma)*/
+                    //else
+                    //{
+                    //    _tokenCurrentIndex++;
+                    //    ConditionStartArgument(tokenIndex + 1);
+                    //}
+
+
+                    ////Пока здесь, но как будто надо бы перенести куда-нибудь
+
+                    //// Неверный вариант - следующий токен это символ ";"
+                    //else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
+                    //{
+                    //    _errors.Add(new(
+                    //    $"Строка {_tokens[tokenIndex + 1].LineNumber} знак {_tokens[tokenIndex + 1].LineOffset} " +
+                    //    $"ОШИБКА: ожидался символ \")\", получено: \"{_tokens[tokenIndex + 1].TokenValue}\"",
+                    //    TokenEnum.OpenBracket,
+                    //    _tokens[tokenIndex + 1]
+                    //    ));
+                    //    // PUSH - вызов следующего метода для текущего индекса
+                    //    CallCondition(TokenCondition.End, tokenIndex);
+                    //}
+                 
                 }
-
-                
             }
                 
 
@@ -195,20 +270,18 @@ namespace WritePascalParser.Models
                     if (_deleteTokens[0].TokenEnum >= TokenEnum.Arguments)
                     {
 
-                        
-
                         // 1. Если есть аргументы у функции write
                         if (_tokens[tokenIndex].TokenEnum == TokenEnum.Arguments)
                         {
                             // REPLACE - вызов следующего метода для следующего индекса
-                            CallCondition(TokenCondition.StartArgument, tokenIndex+1);
+                            CallCondition(TokenCondition.StartArgument, tokenIndex + 1);
                         }
 
                         // 2. Если нет аргументов у функции write
                         else if (_tokens[tokenIndex].TokenEnum == TokenEnum.CloseBracket)
                         {
                             // PUSH - вызов следующего метода для текущего индекса
-                            CallCondition(TokenCondition.End, tokenIndex);
+                            CallCondition(TokenCondition.StartArgument, tokenIndex);
                         }
 
                     }
@@ -242,22 +315,15 @@ namespace WritePascalParser.Models
 
         private void ConditionStartArgument(int tokenIndex)
         {
-            if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma &&
-                _tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
+            // Если символы закончились
+            if (tokenIndex == _tokens.Count)
             {
-                _errors.Add(new(
-                $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
-                $"ОШИБКА: ожидался(лись) аргумент(ы) функции, получено: \"{_tokens[tokenIndex].TokenValue}\"",
-                TokenEnum.Arguments,
-                _tokens[tokenIndex]
-                ));
-                _tokenCurrentIndex++;
-                // REPLACE - вызов следующего метода для следующего индекса
-                ConditionEnd(tokenIndex + 1);
+                EarlyEndingOfRecursiveDescent(tokenIndex - 1);
             }
-            
 
-            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
+
+
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.CloseBracket)
             {
                 _tokenCurrentIndex++;
                 // Верный вариант - только один аргумент
@@ -267,30 +333,87 @@ namespace WritePascalParser.Models
 
             else
             {
+                // Верный вариант - один и более аргументы
                 ConditionSymbRem(tokenIndex);
             }
 
-            
+
+
+
+            //if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
+            //{
+            //    _errors.Add(new(
+            //    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+            //    $"ОШИБКА: ожидался(лись) аргумент(ы) функции, получено: \"{_tokens[tokenIndex].TokenValue}\"",
+            //    TokenEnum.Arguments,
+            //    _tokens[tokenIndex]
+            //    ));
+            //    _tokenCurrentIndex++;
+            //    // REPLACE - вызов следующего метода для следующего индекса
+            //    CallCondition(TokenCondition.SymbRem, tokenIndex + 1);
+            //}
+            //else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
+            //{
+            //    _tokenCurrentIndex++;
+            //    // Верный вариант - только один аргумент
+            //    ConditionEnd(tokenIndex + 1);
+
+            //}
+
+            //else
+            //{
+            //    ConditionSymbRem(tokenIndex);
+            //}
+
         }
 
         private void ConditionSymbRem(int tokenIndex)
         {
+            if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
+            {
+                _errors.Add(new(
+                $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+                $"ОШИБКА: ожидался(лись) аргумент(ы) функции, получено: \"{_tokens[tokenIndex].TokenValue}\"",
+                TokenEnum.Arguments,
+                _tokens[tokenIndex]
+                ));
+                _tokenCurrentIndex++;
+                // REPLACE - вызов следующего метода для следующего индекса
+                CallCondition(TokenCondition.SymbRem, tokenIndex + 1);
+            }
+
+
             // Верные варианты
 
-            if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Comma)
+            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Comma
+                && _tokens[tokenIndex].TokenEnum == TokenEnum.Arguments)
             {
                 _tokenCurrentIndex++;
                 ConditionArgument(tokenIndex + 1);
             }
 
-            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.CloseBracket)
+            else if (_tokens[tokenIndex ].TokenEnum == TokenEnum.CloseBracket)
             {
                 _tokenCurrentIndex++;
                 ConditionEnd(tokenIndex + 1);
             }
 
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.EndLine)
+            {
+                tokenIndex++;
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+                    $"ОШИБКА: ожидался  символ \")\", получено \"{_tokens[tokenIndex].TokenValue}\"",
+                    TokenEnum.CloseBracket,
+                    _tokens[tokenIndex]
+                ));
+                // PUSH - вызов следующего метода для текущего индекса
+                CallCondition(TokenCondition.End, tokenIndex );
+            }
+
             // Неверный вариант - нет запятой между аргументами
-            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments)
+            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments
+                && _tokens[tokenIndex].TokenEnum == TokenEnum.Arguments)
             {
                 _tokenCurrentIndex++;
                 tokenIndex++;
@@ -306,15 +429,13 @@ namespace WritePascalParser.Models
                 // PUSH - вызов следующего метода для текущего индекса
                 CallCondition(TokenCondition.Argument, tokenIndex);
             }
-            else if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
+            
+
+            
+            else if (_tokens[tokenIndex + 1].TokenEnum != TokenEnum.Arguments
+                && _tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
             {
-                tokenIndex++;
-                _errors.Add(new(
-                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
-                    $"ОШИБКА: ожидался  символ \")\", получено \"{_tokens[tokenIndex].TokenValue}\"",
-                    TokenEnum.CloseBracket,
-                    _tokens[tokenIndex]
-                ));
+                CallCondition(TokenCondition.Argument, tokenIndex);
             }
         }
 
@@ -332,62 +453,222 @@ namespace WritePascalParser.Models
             {
                 ConditionSymbRem(tokenIndex);
             }
+
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma &&
+                _tokens[tokenIndex + 1].TokenEnum != TokenEnum.Arguments)
+            {
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+                    $"ОШИБКА: ожидался(лись) аргумент(ы) функции, получено: \"{_tokens[tokenIndex].TokenValue}\"",
+                    TokenEnum.Arguments,
+                    _tokens[tokenIndex]
+                ));
+                _tokenCurrentIndex++;
+
+                
+                CallCondition(TokenCondition.End, tokenIndex + 1);
+                
+                
+            }
         }
+
+
+        /// <summary>
+        /// Дополнительное состояние (нужно для нейтрализации)
+        /// </summary>
+        /// <param name="tokenIndex"></param>
+        private void ConditionCloseBracket(int tokenIndex)
+        {
+            // Верный вариант
+            if (_tokens[tokenIndex].TokenEnum == TokenEnum.CloseBracket)
+            {
+                _tokenCurrentIndex++;
+                ConditionEnd(tokenIndex + 1);
+            }
+
+            // Неверный вариант - текущий токен не символ ")"
+            else
+            {
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset} " +
+                    $"ОШИБКА: ожидался символ \")\", получено: \"{_tokens[tokenIndex].TokenValue}\"",
+                    TokenEnum.CloseBracket,
+                    _tokens[tokenIndex]
+                ));
+
+                _deleteTokens.Add(_tokens[tokenIndex]);
+
+                if (tokenIndex < _tokens.Count - 1)
+                {
+                    // DELETE - вызов текущего метода для следующего индекса
+                    CallCondition(TokenCondition.CloseBracket, tokenIndex + 1);
+                }
+
+                // Прошли все токены и при этом не встретился символ ")"
+                else
+                {
+                    // Подготовительный этап перед заменой или добавлением
+                    tokenIndex -= _deleteTokens.Count - 1;
+                    _errors.RemoveRange(_errors.Count - (_deleteTokens.Count - 1), _deleteTokens.Count - 1);
+
+
+
+                    // Не очень работающий вариант
+                    // Отсутствует токен перед символом "("
+                    if (_deleteTokens[0].TokenEnum >= TokenEnum.OpenBracket
+                        && _deleteTokens[0].TokenEnum != TokenEnum.Arguments)
+                    {
+                        _deleteTokens.Clear();
+                        // PUSH - вызов следующего метода для текущего индекса
+                        CallCondition(TokenCondition.OpenBracket, tokenIndex);
+                    }
+
+                    // Вместо ключ. слово write написано что-то иное (Token Arguments)
+                    else
+                    {
+                        _deleteTokens.Clear();
+                        // REPLACE - вызов следующего метода для следующего индекса
+                        CallCondition(TokenCondition.OpenBracket, tokenIndex + 1);
+                    }
+
+                }
+
+
+                /*if (_tokens.Count < 4)
+                {
+                    // PUSH - вызов следующего метода для текущего индекса
+                    CallCondition(TokenCondition.OpenBracket, tokenIndex);
+                }
+                else
+                {
+                    // REPLACE - вызов следующего метода для следующего индекса
+                    CallCondition(TokenCondition.OpenBracket, tokenIndex+1);
+                }*/
+            }
+        }
+
+
 
         private void ConditionEnd(int tokenIndex)
         {
+            // Если символы закончились
+            if (tokenIndex == _tokens.Count)
+            {
+                EarlyEndingOfRecursiveDescent(tokenIndex - 1);
+            }
+
+
             // Верные варианты
-            if (_errors.Count == 0 && tokenIndex == _tokens.Count - 1 &&
+            else if (tokenIndex  == _tokens.Count - 1 &&
                 _tokens[tokenIndex].TokenEnum == TokenEnum.EndLine)
             {
-
-                _errors.Add(new("Ошибок нет", TokenEnum.EndLine, _tokens[tokenIndex]));
-                _isFinal = true;
+                //_isFinal = true;
                 _tokenCurrentIndex++;
             }
 
-            else if (_errors.Count == 0 && tokenIndex == _tokens.Count - 2 &&
+            else if (tokenIndex == _tokens.Count - 2 &&
             _tokens[tokenIndex + 1].TokenEnum == TokenEnum.EndLine)
             {
-                _errors.Add(new("Ошибок нет", TokenEnum.EndLine, _tokens[tokenIndex + 1]));
-                _isFinal = true;
+                //_errors.Add(new("Ошибок нет", TokenEnum.EndLine, _tokens[tokenIndex + 1]));
+                //_isFinal = true;
                 _tokenCurrentIndex++;
+            }
+
+            // Если после символа ";" есть ещё токены
+            else if (tokenIndex+1 < _tokens.Count - 1 &&
+                _tokens[tokenIndex].TokenEnum == TokenEnum.EndLine)
+            {
+                // Зацикливание проверки
+                CallCondition(TokenCondition.Write, tokenIndex + 1);
             }
 
 
             else
             {
-                // На месте последнего токена не символ ";"
-                if (tokenIndex == _tokens.Count-1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine)
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset + 1} " +
+                    $"ОШИБКА: ожидался символ \";\"",
+                    TokenEnum.EndLine,
+                    _tokens[tokenIndex]
+                ));
+
+                _deleteTokens.Add(_tokens[tokenIndex]);
+
+                if (tokenIndex < _tokens.Count - 1)
                 {
-                    _errors.Add(new(
-                        $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset+1} " +
-                        $"ОШИБКА: ожидался символ \";\"",
-                        TokenEnum.EndLine,
-                        _tokens[tokenIndex]
-                        ));
-                }
-                else if (tokenIndex == _tokens.Count - 2 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
-                {
-                    _errors.Add(new(
-                        $"Строка {_tokens[tokenIndex+1].LineNumber} знак {_tokens[tokenIndex+1].LineOffset} " +
-                        $"ОШИБКА: ожидался символ \";\"",
-                        TokenEnum.EndLine,
-                        _tokens[tokenIndex + 1]
-                        ));
+                    // DELETE - вызов текущего метода для следующего индекса
+                    CallCondition(TokenCondition.End, tokenIndex + 1);
                 }
 
-                else if (tokenIndex < _tokens.Count-1 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
+                // Прошли все токены и при этом не встретился символ ";"
+                else
                 {
-                    _errors.Add(new(
-                        $"Строка {_tokens[tokenIndex+1].LineNumber} знак {_tokens[tokenIndex+1].LineOffset} " +
-                        $"ОШИБКА: ожидался символ \";\", получено: {_tokens[tokenIndex + 1].TokenValue}",
-                        TokenEnum.EndLine, 
-                        _tokens[tokenIndex + 1]
-                    ));
-                    _tokenCurrentIndex++;
-                    CallCondition(TokenCondition.End, tokenIndex+1);
+                    // Подготовительный этап перед заменой или добавлением
+                    tokenIndex -= _deleteTokens.Count - 1;
+                    _errors.RemoveRange(_errors.Count - (_deleteTokens.Count - 1), _deleteTokens.Count - 1);
+
+
+                    // Отсутствует токен после символа ";"
+                    if (tokenIndex == _tokens.Count - 1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine
+                        || (_tokens[tokenIndex].TokenEnum > TokenEnum.None && _tokens[tokenIndex].TokenEnum != TokenEnum.Arguments))
+                    {
+                        _deleteTokens.Clear();
+                        // PUSH - вызов следующего метода для текущего индекса
+                        CallCondition(TokenCondition.Write, tokenIndex);
+                    }
+
+                    // Вместо символа ";" написано что-то иное (Token Arguments)
+                    else
+                    {
+                        _deleteTokens.Clear();
+                        // REPLACE - вызов следующего метода для следующего индекса
+                        CallCondition(TokenCondition.Write, tokenIndex + 1);
+                    }
+
                 }
+
+
+
+
+
+
+
+
+
+
+                // Рассмотрены не все варианты
+
+                //// На месте последнего токена не символ ";"
+                //if (tokenIndex == _tokens.Count-1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine)
+                //{
+                //    _errors.Add(new(
+                //        $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset+1} " +
+                //        $"ОШИБКА: ожидался символ \";\"",
+                //        TokenEnum.EndLine,
+                //        _tokens[tokenIndex]
+                //        ));
+                //}
+                //else if (tokenIndex == _tokens.Count - 2 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
+                //{
+                //    _errors.Add(new(
+                //        $"Строка {_tokens[tokenIndex+1].LineNumber} знак {_tokens[tokenIndex+1].LineOffset} " +
+                //        $"ОШИБКА: ожидался символ \";\"",
+                //        TokenEnum.EndLine,
+                //        _tokens[tokenIndex + 1]
+                //        ));
+                //}
+
+                //else if (tokenIndex < _tokens.Count-1 && _tokens[tokenIndex + 1].TokenEnum != TokenEnum.EndLine)
+                //{
+                //    _errors.Add(new(
+                //        $"Строка {_tokens[tokenIndex+1].LineNumber} знак {_tokens[tokenIndex+1].LineOffset} " +
+                //        $"ОШИБКА: ожидался символ \";\", получено: {_tokens[tokenIndex + 1].TokenValue}",
+                //        TokenEnum.EndLine, 
+                //        _tokens[tokenIndex + 1]
+                //    ));
+                //    _tokenCurrentIndex++;
+                //    CallCondition(TokenCondition.End, tokenIndex+1);
+                //}
 
                
             }
@@ -415,31 +696,21 @@ namespace WritePascalParser.Models
         private void ErrorsEmptyTokens()
         {
             _errors.Add(new(
-                $"Строка {1} знак {1} " +
-                $"ОШИБКА: ожидалось ключевое слово write",
-                TokenEnum.Write,
+                $"Ошибок нет",
+                TokenEnum.None,
                 null
             ));
 
-            _errors.Add(new(
-                $"Строка {1} знак {1} " +
-                $"ОШИБКА: ожидался символ \"(\"",
-                TokenEnum.OpenBracket,
-                null
-            ));
+            
+        }
 
-            _errors.Add(new(
-                $"Строка {1} знак {1} " +
-                $"ОШИБКА: ожидался символ \")\"",
-                TokenEnum.OpenBracket,
-                null
-            ));
-            _errors.Add(new(
-                $"Строка {1} знак {1} " +
-                $"ОШИБКА: ожидался символ \";\"",
-                TokenEnum.OpenBracket,
-                null
-            ));
+        private void ErrorsSort()
+        {
+            _errors = _errors
+                        .OrderBy(e => e.TokenData.LineNumber)
+                        .ThenBy(e => e.TokenData.LineOffset)
+                        .ThenBy(e => e.TokenData.ErrorSymbolLineOffset)
+                        .ToList();
         }
 
         public RecursiveDescent(List<TokenData> tokens, List<ErrorLexer> errors) 
@@ -503,16 +774,20 @@ namespace WritePascalParser.Models
             string result = string.Empty;
             if (!_isEmptyTokens)
             {
-                _errors = _errors.OrderBy(e => e.TokenData.LineNumber).ToList().OrderBy(e => e.TokenData.LineOffset).ToList();
+                ErrorsSort();
             }
 
-            if (_errors != null)
+            if (_errors.Count == 0)
             {
-                for (int i = 0; i < _errors.Count; i++)
-                {
-                    result += _errors[i].ErrorValue + "\n";
-                }
+                _errors.Add(new("Ошибок нет", TokenEnum.EndLine, null));
             }
+
+            
+            for (int i = 0; i < _errors.Count; i++)
+            {
+                result += _errors[i].ErrorValue + "\n";
+            }
+            
             return result;
         }
     }
