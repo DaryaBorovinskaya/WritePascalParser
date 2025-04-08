@@ -121,8 +121,14 @@ namespace WritePascalParser.Models
         }
         private void ConditionWrite(int tokenIndex)
         {
+            // Если символы закончились
+            if (tokenIndex == _tokens.Count)
+            {
+                return;
+            }
+
             // Верный вариант
-            if (_tokens[tokenIndex].TokenEnum == TokenEnum.Write)
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Write)
             {
                 _tokenCurrentIndex++;
                 _deleteTokens.Clear();
@@ -178,7 +184,6 @@ namespace WritePascalParser.Models
                     
                 }
                 
-                
                 /*if (_tokens.Count < 4)
                 {
                     // PUSH - вызов следующего метода для текущего индекса
@@ -194,15 +199,11 @@ namespace WritePascalParser.Models
 
         private void ConditionOpenBracket(int tokenIndex)
         {
-            
-
             // Если символы закончились
             if (tokenIndex == _tokens.Count)
             {
                 EarlyEndingOfRecursiveDescent(tokenIndex-1);
             }
-
-            
 
             // Возможно верные варианты
             else if (_tokens[tokenIndex].TokenEnum == TokenEnum.OpenBracket)
@@ -496,7 +497,7 @@ namespace WritePascalParser.Models
                 EarlyEndingOfRecursiveDescent(tokenIndex - 1);
             }
 
-
+            // Запятая в начале аргументов
             else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
             {
                 _errors.Add(new(
@@ -509,6 +510,25 @@ namespace WritePascalParser.Models
                 // DELETE - вызов текущего метода для следующего индекса
                 CallCondition(TokenCondition.SymbRem, tokenIndex + 1);
             }
+            // Неверный вариант - нет запятой между аргументами
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Arguments
+                && _tokens[tokenIndex - 1].TokenEnum == TokenEnum.Arguments)
+            {
+
+                // Определяем место, куда можно было бы добавить запятую 
+                int spaceLineOffset = _tokens[tokenIndex].LineOffset - 1;
+                _errors.Add(new(
+                    $"Строка {_tokens[tokenIndex].LineNumber} знак {spaceLineOffset} " +
+                    $"ОШИБКА: ожидался  символ \",\" между аргументами {_tokens[tokenIndex - 1].TokenValue} и {_tokens[tokenIndex].TokenValue}",
+                    TokenEnum.Comma,
+                    _tokens[tokenIndex]
+                ));
+                tokenIndex++;
+                // PUSH - вызов следующего метода для текущего индекса
+                CallCondition(TokenCondition.Argument, tokenIndex);
+            }
+
+            
 
             else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Write)
             {
@@ -532,6 +552,8 @@ namespace WritePascalParser.Models
             {
                 CallCondition(TokenCondition.End, tokenIndex + 1);
             }
+
+
 
 
             //if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
@@ -604,14 +626,37 @@ namespace WritePascalParser.Models
 
         private void ConditionArgument(int tokenIndex)
         {
-            if (_tokens[tokenIndex + 1].TokenEnum == TokenEnum.Arguments
-                && _tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
+            if (_tokens[tokenIndex].TokenEnum == TokenEnum.Comma)
             {
-                _tokenCurrentIndex++;
-                ConditionSymbRem(tokenIndex + 1);
+                if (_tokens[tokenIndex+1].TokenEnum == TokenEnum.Arguments)
+                {
+                    _tokenCurrentIndex++;
+                    ConditionSymbRem(tokenIndex + 1);
+                }
+                
+                else
+                {
+                    // Запятая в конце аргументов
+                    {
+                        _errors.Add(new(
+                            $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex ].LineOffset} " +
+                            $"ОШИБКА: ожидался(лись) аргумент(ы) функции, получено: \"{_tokens[tokenIndex ].TokenValue}\"",
+                            TokenEnum.Arguments,
+                            _tokens[tokenIndex]
+                        ));
+
+                        CallCondition(TokenCondition.SymbRem, tokenIndex+1);
+                    }
+                }
             }
 
             else if (_tokens[tokenIndex].TokenEnum == TokenEnum.CloseBracket)
+            {
+                CallCondition(TokenCondition.SymbRem, tokenIndex);
+            }
+
+            else if (_tokens[tokenIndex].TokenEnum == TokenEnum.Arguments
+                && _tokens[tokenIndex-1].TokenEnum != TokenEnum.Comma)
             {
                 CallCondition(TokenCondition.SymbRem, tokenIndex);
             }
@@ -762,7 +807,7 @@ namespace WritePascalParser.Models
             {
                 _errors.Add(new(
                     $"Строка {_tokens[tokenIndex].LineNumber} знак {_tokens[tokenIndex].LineOffset + 1} " +
-                    $"ОШИБКА: ожидался символ \";\"",
+                    $"ОШИБКА: ожидался символ \";\", получено: {_tokens[tokenIndex].TokenValue}",
                     TokenEnum.EndLine,
                     _tokens[tokenIndex]
                 ));
@@ -784,8 +829,8 @@ namespace WritePascalParser.Models
 
 
                     // Отсутствует токен после символа ";"
-                    if (tokenIndex == _tokens.Count - 1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine
-                        || (_tokens[tokenIndex].TokenEnum > TokenEnum.None && _tokens[tokenIndex].TokenEnum != TokenEnum.Arguments))
+                    if (/*tokenIndex == _tokens.Count - 1 && _tokens[tokenIndex].TokenEnum != TokenEnum.EndLine
+                        ||*/ (_tokens[tokenIndex].TokenEnum > TokenEnum.None && _tokens[tokenIndex].TokenEnum != TokenEnum.Arguments))
                     {
                         _deleteTokens.Clear();
                         // PUSH - вызов следующего метода для текущего индекса
@@ -801,13 +846,6 @@ namespace WritePascalParser.Models
                     }
 
                 }
-
-
-
-
-
-
-
 
 
 
